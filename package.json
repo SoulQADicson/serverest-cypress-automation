@@ -1,0 +1,19 @@
+{
+  "name": "serverest-cypress-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Testes E2E e de API do ServeRest com Cypress",
+  "scripts": {
+    "cy:open": "cypress open",
+    "test": "cypress run",
+    "test:e2e": "cypress run --spec \"cypress/e2e/frontend/**/*.cy.js\"",
+    "test:api": "cypress run --spec \"cypress/e2e/api/**/*.cy.js\"",
+    "verify": "cypress verify"
+  },
+  "devDependencies": {
+    "cypress": "13.17.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
