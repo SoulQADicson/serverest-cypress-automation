@@ -6,7 +6,7 @@ import { authenticationApi } from '../../services/authenticationApi'
 import { usersApi } from '../../services/usersApi'
 import { createProduct, createUser } from '../../utils/dataFactory'
 
-describe('Cadastro de produto no frontend', () => {
+describe('Frontend product registration', () => {
   let admin
   let product
   let token
@@ -19,25 +19,23 @@ describe('Cadastro de produto no frontend', () => {
     token = undefined
   })
 
-  it("CT03 - 'Cadastrar um novo produto como usuário administrador'", () => {
-    // Arrange
+  it("CT03 - 'Register a new product as an administrator'", () => {
     admin = createUser({ administrador: 'true' })
     product = createProduct()
 
+    // Setup: obter token para cleanup posterior
     usersApi.create(admin).its('status').should('eq', 201)
     authenticationApi.login({ email: admin.email, password: admin.password }).then((response) => {
       expect(response.status).to.eq(200)
       token = response.body.authorization
     })
 
-    // Act
     loginPage.visit()
     loginPage.login(admin.email, admin.password)
     adminProductsPage.openCreation()
     cy.intercept('POST', '**/produtos').as('createProduct')
     adminProductsPage.create(product)
 
-    // Assert
     cy.wait('@createProduct').then(({ response }) => {
       expect(response.statusCode).to.eq(201)
       expect(response.body).to.include({ message: MESSAGES.CREATED_SUCCESSFULLY })

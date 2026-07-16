@@ -11,6 +11,11 @@ export const createUser = (overrides = {}) => {
   }
 }
 
+export const createInvalidCredentials = () => ({
+  email: 'usuario.inexistente@example.com',
+  password: 'senha-invalida'
+})
+
 export const createProduct = (overrides = {}) => {
   const id = uniqueId()
   return {
