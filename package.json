@@ -4,14 +4,18 @@
   "private": true,
   "description": "Testes E2E e de API do ServeRest com Cypress",
   "scripts": {
-    "cy:open": "cypress open",
-    "test": "cypress run",
-    "test:e2e": "cypress run --spec \"cypress/e2e/frontend/**/*.cy.js\"",
-    "test:api": "cypress run --spec \"cypress/e2e/api/**/*.cy.js\"",
-    "verify": "cypress verify"
+    "cy:open": "node scripts/cypress.js open",
+    "test": "node scripts/cypress.js run",
+    "test:e2e": "node scripts/cypress.js run --spec \"cypress/e2e/frontend/**/*.cy.js\"",
+    "test:api": "node scripts/cypress.js run --spec \"cypress/e2e/api/**/*.cy.js\"",
+    "test:report": "node scripts/cypress.js run",
+    "lint": "eslint .",
+    "quality": "npm run lint && npm test",
+    "verify": "node scripts/cypress.js verify"
   },
   "devDependencies": {
-    "cypress": "13.17.0"
+    "cypress": "^15.18.1",
+    "eslint": "^9.39.5"
   },
   "engines": {
     "node": ">=20"

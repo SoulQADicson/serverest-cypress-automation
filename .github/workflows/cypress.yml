@@ -1,0 +1,39 @@
+name: Cypress tests
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static analysis
+        run: npm run lint
+
+      - name: Run API and E2E tests
+        run: npm test
+
+      - name: Publish test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-evidence
+          if-no-files-found: warn
+          path: |
+            reports/
+            cypress/screenshots/

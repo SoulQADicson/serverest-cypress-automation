@@ -1,8 +1,10 @@
 import { loginPage } from '../../pages/LoginPage'
 import { registerPage } from '../../pages/RegisterPage'
+import { MESSAGES } from '../../constants/messages'
+import { UI_ROUTES } from '../../constants/routes'
 import { createUser } from '../../utils/dataFactory'
 
-describe('Autenticacao no frontend', () => {
+describe('Autenticação no frontend', () => {
   let createdUser
 
   afterEach(() => {
@@ -10,24 +12,29 @@ describe('Autenticacao no frontend', () => {
     createdUser = undefined
   })
 
-  it('cadastra um novo usuario comum', () => {
+  it("CT01 - 'Cadastrar um novo usuário comum com dados válidos'", () => {
+    // Arrange
     createdUser = createUser()
     cy.intercept('POST', '**/usuarios').as('createUser')
 
+    // Act
     loginPage.visit()
     loginPage.openRegistration()
     registerPage.register(createdUser)
 
+    // Assert
     cy.wait('@createUser').its('response.statusCode').should('eq', 201)
-    cy.url().should('include', '/home')
+    cy.url().should('include', UI_ROUTES.HOME)
     cy.get('[data-testid="logout"]').should('be.visible')
   })
 
-  it('impede o login com credenciais invalidas', () => {
+  it("CT02 - 'Impedir o acesso com credenciais inválidas'", () => {
+    // Act
     loginPage.visit()
     loginPage.login('usuario.inexistente@example.com', 'senha-invalida')
 
-    cy.contains('Email e/ou senha inválidos').should('be.visible')
-    cy.url().should('include', '/login')
+    // Assert
+    cy.contains(MESSAGES.INVALID_CREDENTIALS).should('be.visible')
+    cy.url().should('include', UI_ROUTES.LOGIN)
   })
 })

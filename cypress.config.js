@@ -1,11 +1,16 @@
 const { defineConfig } = require('cypress')
+const { generateTestReport } = require('./cypress/plugins/testReport')
 
 module.exports = defineConfig({
+  allowCypressEnv: false,
+  expose: {
+    apiUrl: 'https://serverest.dev'
+  },
   e2e: {
-    baseUrl: 'https://front.serverest.dev',
-    env: {
-      apiUrl: 'https://serverest.dev'
+    setupNodeEvents(on) {
+      on('after:run', generateTestReport)
     },
+    baseUrl: 'https://front.serverest.dev',
     specPattern: 'cypress/e2e/**/*.cy.js',
     supportFile: 'cypress/support/e2e.js',
     video: false,

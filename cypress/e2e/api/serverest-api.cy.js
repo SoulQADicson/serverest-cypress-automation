@@ -1,41 +1,56 @@
-import { api } from '../../utils/api'
+import { MESSAGES } from '../../constants/messages'
+import { authenticationApi } from '../../services/authenticationApi'
+import { productsApi } from '../../services/productsApi'
+import { usersApi } from '../../services/usersApi'
+import { expectProductListContract } from '../../schemas/product.schema'
+import { expectCreatedResourceContract } from '../../schemas/user.schema'
 import { createUser } from '../../utils/dataFactory'
 
 describe('API ServeRest', () => {
-  it('POST /usuarios - cria um usuario com dados validos', () => {
+  let createdUserId
+
+  afterEach(() => {
+    if (createdUserId) usersApi.remove(createdUserId).its('status').should('eq', 200)
+    createdUserId = undefined
+  })
+
+  it("CT04 - 'Cadastrar usuário com dados válidos via API'", () => {
+    // Arrange
     const user = createUser()
 
-    api.createUser(user).then((response) => {
-      expect(response.status).to.eq(201)
-      expect(response.body).to.include({ message: 'Cadastro realizado com sucesso' })
-      expect(response.body._id).to.be.a('string').and.not.be.empty
+    // Act
+    usersApi.create(user).then((response) => {
+      createdUserId = response.body._id
 
-      api.deleteUser(response.body._id).its('status').should('eq', 200)
+      // Assert
+      expect(response.status).to.eq(201)
+      expect(response.body.message).to.eq(MESSAGES.CREATED_SUCCESSFULLY)
+      expectCreatedResourceContract(response.body)
     })
   })
 
-  it('POST /login - rejeita credenciais invalidas', () => {
-    api.login({
+  it("CT05 - 'Rejeitar autenticação com credenciais inválidas via API'", () => {
+    // Arrange
+    const invalidCredentials = {
       email: 'nao.existe@example.com',
       password: 'senha-incorreta'
-    }).then((response) => {
+    }
+
+    // Act
+    authenticationApi.login(invalidCredentials).then((response) => {
+      // Assert
       expect(response.status).to.eq(401)
-      expect(response.body.message).to.eq('Email e/ou senha inválidos')
+      expect(response.body.message).to.eq(MESSAGES.INVALID_CREDENTIALS)
       expect(response.body).not.to.have.property('authorization')
     })
   })
 
-  it('GET /produtos - retorna a lista de produtos com contrato valido', () => {
-    cy.request(`${Cypress.env('apiUrl')}/produtos`).then((response) => {
+  it("CT06 - 'Listar produtos e validar o contrato da resposta via API'", () => {
+    // Act
+    productsApi.list().then((response) => {
+      // Assert
       expect(response.status).to.eq(200)
-      expect(response.body.quantidade).to.be.a('number').and.at.least(0)
-      expect(response.body.produtos).to.be.an('array')
-
-      if (response.body.produtos.length) {
-        expect(response.body.produtos[0]).to.include.all.keys(
-          '_id', 'nome', 'preco', 'descricao', 'quantidade'
-        )
-      }
+      expectProductListContract(response.body)
     })
   })
 })

@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "duration": 20552,
+    "generatedAt": "2026-07-16T18:10:23.666Z"
+  },
+  "tests": [
+    {
+      "spec": "cypress\\e2e\\api\\serverest-api.cy.js",
+      "title": "CT04 - 'Cadastrar usuário com dados válidos via API'",
+      "state": "passed",
+      "duration": 0
+    },
+    {
+      "spec": "cypress\\e2e\\api\\serverest-api.cy.js",
+      "title": "CT05 - 'Rejeitar autenticação com credenciais inválidas via API'",
+      "state": "passed",
+      "duration": 0
+    },
+    {
+      "spec": "cypress\\e2e\\api\\serverest-api.cy.js",
+      "title": "CT06 - 'Listar produtos e validar o contrato da resposta via API'",
+      "state": "passed",
+      "duration": 0
+    },
+    {
+      "spec": "cypress\\e2e\\frontend\\authentication.cy.js",
+      "title": "CT01 - 'Cadastrar um novo usuário comum com dados válidos'",
+      "state": "passed",
+      "duration": 0
+    },
+    {
+      "spec": "cypress\\e2e\\frontend\\authentication.cy.js",
+      "title": "CT02 - 'Impedir o acesso com credenciais inválidas'",
+      "state": "passed",
+      "duration": 0
+    },
+    {
+      "spec": "cypress\\e2e\\frontend\\product-registration.cy.js",
+      "title": "CT03 - 'Cadastrar um novo produto como usuário administrador'",
+      "state": "passed",
+      "duration": 0
+    }
+  ]
+}
