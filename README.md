@@ -37,6 +37,8 @@ Every headless execution automatically generates:
 - `reports/test-report.html`: a self-contained visual report with a chart for passed, failed, and skipped tests;
 - `reports/test-results.json`: structured results for integration with other tools.
 
+After a local headless run finishes, the updated HTML report opens automatically in the default browser. This step is skipped in CI environments.
+
 Additional commands:
 
 ```bash
