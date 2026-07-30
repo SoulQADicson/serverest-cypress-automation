@@ -4,6 +4,7 @@ import { MESSAGES } from '../../constants/messages'
 import { UI_ROUTES } from '../../constants/routes'
 import { authenticationApi } from '../../services/authenticationApi'
 import { usersApi } from '../../services/usersApi'
+import { productsApi } from '../../services/productsApi'
 import { createProduct, createUser } from '../../utils/dataFactory'
 
 describe('Frontend product registration', () => {
@@ -19,7 +20,7 @@ describe('Frontend product registration', () => {
     token = undefined
   })
 
-  it("CT03 - 'Register a new product as an administrator'", () => {
+  it('CT-UI-PRD-001 - Register a new product as an administrator', () => {
     admin = createUser({ administrador: 'true' })
     product = createProduct()
 
@@ -43,5 +44,37 @@ describe('Frontend product registration', () => {
     })
     cy.url().should('include', UI_ROUTES.ADMIN_PRODUCTS)
     cy.contains('td', product.nome).should('be.visible')
+  })
+
+  it('CT-UI-PRD-002 - Validate required product fields before submission', () => {
+    admin = createUser({ administrador: 'true' })
+    usersApi.create(admin).its('status').should('eq', 201)
+
+    loginPage.visit()
+    loginPage.login(admin.email, admin.password)
+    adminProductsPage.openCreation()
+    adminProductsPage.submit()
+
+    adminProductsPage.requiredFieldsShouldBeInvalid()
+    cy.url().should('include', '/admin/cadastrarprodutos')
+  })
+
+  it('CT-UI-PRD-003 - Prevent registration of a duplicated product', () => {
+    admin = createUser({ administrador: 'true' })
+    product = createProduct()
+
+    usersApi.create(admin).its('status').should('eq', 201)
+    authenticationApi.login({ email: admin.email, password: admin.password }).then((response) => {
+      token = response.body.authorization
+      return productsApi.create(product, token)
+    }).its('status').should('eq', 201)
+
+    loginPage.visit()
+    loginPage.login(admin.email, admin.password)
+    adminProductsPage.openCreation()
+    adminProductsPage.create(product)
+
+    cy.contains(MESSAGES.PRODUCT_ALREADY_EXISTS).should('be.visible')
+    cy.url().should('include', '/admin/cadastrarprodutos')
   })
 })

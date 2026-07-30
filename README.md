@@ -4,21 +4,14 @@ A Cypress and JavaScript test suite for the [ServeRest frontend](https://front.s
 
 ## Test coverage
 
-### Frontend (3 test cases)
+The risk-based suite contains 52 cataloged scenarios:
 
-1. `CT01` - Successful registration of a standard user.
-2. `CT02` - Login attempt with invalid credentials.
-3. `CT03` - Product registration by an administrator.
+- 46 API scenarios covering positive and negative contracts for authentication, users, products and carts;
+- 6 frontend scenarios covering registration, login, logout, validation feedback and administrator product registration.
 
-### API (3 test cases)
-
-1. `CT04` - `POST /usuarios`: successful user creation and response validation.
-2. `CT05` - `POST /login`: rejection of invalid credentials.
-3. `CT06` - `GET /produtos`: product listing and response contract validation.
+Each scenario is classified by priority, product risk and CTFL test design technique. The complete strategy is documented in [the test coverage matrix](docs/test-coverage.md).
 
 Mutable test data uses unique identifiers. Users and products created during a test are removed by its teardown routine.
-
-The test strategy and the mapping between test cases and CTFL techniques are documented in the [test coverage matrix](docs/test-coverage.md).
 
 ## Prerequisites
 
@@ -36,6 +29,8 @@ Every headless execution automatically generates:
 
 - `reports/test-report.html`: a self-contained visual report with a chart for passed, failed, and skipped tests;
 - `reports/test-results.json`: structured results for integration with other tools.
+
+The report includes P0 critical-path pass rate, coverage by domain, CTFL techniques, product risks, execution errors and planned scenarios outside the selected run scope.
 
 After a local headless run finishes, the updated HTML report opens automatically in the default browser. This step is skipped in CI environments.
 

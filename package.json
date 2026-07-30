@@ -11,6 +11,8 @@
     "test:report": "node scripts/cypress.js run",
     "lint": "eslint .",
     "quality": "npm run lint && npm test",
+    "quality:api": "npm run lint && npm run test:api",
+    "quality:front": "npm run lint && npm run test:e2e",
     "verify": "node scripts/cypress.js verify"
   },
   "devDependencies": {

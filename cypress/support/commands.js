@@ -1,10 +1,11 @@
 import { productsApi } from '../services/productsApi'
 import { usersApi } from '../services/usersApi'
+import { byTestId, TEST_IDS } from '../constants/selectors'
 
 Cypress.Commands.add('loginUi', (email, password) => {
-  cy.get('[data-testid="email"]').clear().type(email)
-  cy.get('[data-testid="senha"]').clear().type(password, { log: false })
-  cy.get('[data-testid="entrar"]').click()
+  cy.get(byTestId(TEST_IDS.auth.email)).clear().type(email)
+  cy.get(byTestId(TEST_IDS.auth.loginPassword)).clear().type(password, { log: false })
+  cy.get(byTestId(TEST_IDS.auth.login)).click()
 })
 
 Cypress.Commands.add('deleteUserByEmail', (email) => {
