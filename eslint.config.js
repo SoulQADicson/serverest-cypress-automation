@@ -5,7 +5,9 @@ const globals = {
   it: 'readonly',
   expect: 'readonly',
   beforeEach: 'readonly',
-  afterEach: 'readonly'
+  afterEach: 'readonly',
+  before: 'readonly',
+  after: 'readonly'
 }
 
 module.exports = [

@@ -13,14 +13,22 @@ describe('ServeRest API - Products', () => {
   const productIds = new Set()
 
   beforeEach(() => {
+    admin = undefined
+    adminId = undefined
+    adminToken = undefined
+  })
+
+  const prepareAdministrator = () => {
     admin = createUser({ administrador: 'true' })
-    usersApi.create(admin).then(({ body }) => {
+    return usersApi.create(admin).then(({ body, status }) => {
+      expect(status).to.eq(201)
       adminId = body._id
-    })
-    authenticationApi.login({ email: admin.email, password: admin.password }).then(({ body }) => {
+      return authenticationApi.login({ email: admin.email, password: admin.password })
+    }).then(({ body, status }) => {
+      expect(status).to.eq(200)
       adminToken = body.authorization
     })
-  })
+  }
 
   afterEach(() => {
     const ids = [...productIds]
@@ -33,7 +41,7 @@ describe('ServeRest API - Products', () => {
   it('CT-API-PRD-001 - Allow an administrator to create and retrieve a product', () => {
     const product = createProduct()
 
-    productsApi.create(product, adminToken).then((response) => {
+    prepareAdministrator().then(() => productsApi.create(product, adminToken)).then((response) => {
       expect(response.status).to.eq(201)
       expect(response.body.message).to.eq(MESSAGES.CREATED_SUCCESSFULLY)
       productIds.add(response.body._id)
@@ -49,7 +57,7 @@ describe('ServeRest API - Products', () => {
   it('CT-API-PRD-002 - Filter products by name and validate the list contract', () => {
     const product = createProduct()
 
-    productsApi.create(product, adminToken).then(({ body }) => {
+    prepareAdministrator().then(() => productsApi.create(product, adminToken)).then(({ body }) => {
       productIds.add(body._id)
       productsApi.list({ nome: product.nome }).then((response) => {
         expect(response.status).to.eq(200)
@@ -85,7 +93,7 @@ describe('ServeRest API - Products', () => {
   it('CT-API-PRD-005 - Reject a duplicated product name', () => {
     const product = createProduct()
 
-    productsApi.create(product, adminToken).then(({ body }) => {
+    prepareAdministrator().then(() => productsApi.create(product, adminToken)).then(({ body }) => {
       productIds.add(body._id)
       productsApi.create(product, adminToken).then((response) => {
         expect(response.status).to.eq(400)
@@ -98,7 +106,7 @@ describe('ServeRest API - Products', () => {
     const product = createProduct()
     const updatedProduct = { ...product, preco: 175, quantidade: 12 }
 
-    productsApi.create(product, adminToken).then(({ body }) => {
+    prepareAdministrator().then(() => productsApi.create(product, adminToken)).then(({ body }) => {
       productsApi.update(body._id, updatedProduct, adminToken).then((response) => {
         expect(response.status).to.eq(200)
         expect(response.body.message).to.eq(MESSAGES.UPDATED_SUCCESSFULLY)
@@ -119,10 +127,10 @@ describe('ServeRest API - Products', () => {
   })
 
   it('CT-API-PRD-008 - Reject invalid product field boundaries', () => {
-    productsApi.create(
+    prepareAdministrator().then(() => productsApi.create(
       { nome: '', preco: 0, descricao: '', quantidade: -1 },
       adminToken
-    ).then((response) => {
+    )).then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body).to.include.all.keys('nome', 'preco', 'quantidade')
     })
@@ -147,8 +155,10 @@ describe('ServeRest API - Products', () => {
     const product = createProduct()
     let standardUserId
 
-    usersApi.create(standardUser).then(({ body }) => { standardUserId = body._id })
-    productsApi.create(product, adminToken).then(({ body }) => productIds.add(body._id))
+    prepareAdministrator().then(() => usersApi.create(standardUser))
+      .then(({ body }) => { standardUserId = body._id })
+    cy.then(() => productsApi.create(product, adminToken))
+      .then(({ body }) => productIds.add(body._id))
     authenticationApi.login({ email: standardUser.email, password: standardUser.password }).then(({ body }) => {
       const standardToken = body.authorization
       const productId = [...productIds][0]
@@ -170,8 +180,9 @@ describe('ServeRest API - Products', () => {
     const secondProduct = createProduct()
     let secondProductId
 
-    productsApi.create(firstProduct, adminToken).then(({ body }) => productIds.add(body._id))
-    productsApi.create(secondProduct, adminToken).then(({ body }) => {
+    prepareAdministrator().then(() => productsApi.create(firstProduct, adminToken))
+      .then(({ body }) => productIds.add(body._id))
+    cy.then(() => productsApi.create(secondProduct, adminToken)).then(({ body }) => {
       secondProductId = body._id
       productIds.add(body._id)
     })
@@ -194,10 +205,11 @@ describe('ServeRest API - Products', () => {
     let standardToken
     let cartActive = false
 
-    usersApi.create(standardUser).then(({ body }) => { standardUserId = body._id })
+    prepareAdministrator().then(() => usersApi.create(standardUser))
+      .then(({ body }) => { standardUserId = body._id })
     authenticationApi.login({ email: standardUser.email, password: standardUser.password })
       .then(({ body }) => { standardToken = body.authorization })
-    productsApi.create(product, adminToken).then(({ body }) => {
+    cy.then(() => productsApi.create(product, adminToken)).then(({ body }) => {
       productIds.add(body._id)
       cartsApi.create([{ idProduto: body._id, quantidade: 1 }], standardToken)
         .its('status').should('eq', 201)

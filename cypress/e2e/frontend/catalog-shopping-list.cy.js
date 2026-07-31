@@ -12,7 +12,7 @@ describe('Frontend catalog and shopping list', () => {
   let product
   let adminToken
 
-  beforeEach(() => {
+  before(() => {
     customer = createUser()
     admin = createUser({ administrador: 'true' })
     product = createProduct({ quantidade: 2 })
@@ -24,11 +24,14 @@ describe('Frontend catalog and shopping list', () => {
       return productsApi.create(product, adminToken)
     }).its('status').should('eq', 201)
 
+  })
+
+  beforeEach(() => {
     loginPage.visit()
     loginPage.login(customer.email, customer.password)
   })
 
-  afterEach(() => {
+  after(() => {
     if (product && adminToken) cy.deleteProductByName(product.nome, adminToken)
     if (customer) cy.deleteUserByEmail(customer.email)
     if (admin) cy.deleteUserByEmail(admin.email)

@@ -12,24 +12,26 @@ describe('Frontend product registration', () => {
   let product
   let token
 
-  afterEach(() => {
-    if (product && token) cy.deleteProductByName(product.nome, token)
-    if (admin) cy.deleteUserByEmail(admin.email)
-    admin = undefined
-    product = undefined
-    token = undefined
-  })
-
-  it('CT-UI-PRD-001 - Register a new product as an administrator', () => {
+  before(() => {
     admin = createUser({ administrador: 'true' })
-    product = createProduct()
-
-    // Setup: obter token para cleanup posterior
     usersApi.create(admin).its('status').should('eq', 201)
     authenticationApi.login({ email: admin.email, password: admin.password }).then((response) => {
       expect(response.status).to.eq(200)
       token = response.body.authorization
     })
+  })
+
+  afterEach(() => {
+    if (product) cy.deleteProductByName(product.nome, token)
+    product = undefined
+  })
+
+  after(() => {
+    if (admin) cy.deleteUserByEmail(admin.email)
+  })
+
+  it('CT-UI-PRD-001 - Register a new product as an administrator', () => {
+    product = createProduct()
 
     loginPage.visit()
     loginPage.login(admin.email, admin.password)
@@ -47,9 +49,6 @@ describe('Frontend product registration', () => {
   })
 
   it('CT-UI-PRD-002 - Validate required product fields before submission', () => {
-    admin = createUser({ administrador: 'true' })
-    usersApi.create(admin).its('status').should('eq', 201)
-
     loginPage.visit()
     loginPage.login(admin.email, admin.password)
     adminProductsPage.openCreation()
@@ -60,14 +59,9 @@ describe('Frontend product registration', () => {
   })
 
   it('CT-UI-PRD-003 - Prevent registration of a duplicated product', () => {
-    admin = createUser({ administrador: 'true' })
     product = createProduct()
 
-    usersApi.create(admin).its('status').should('eq', 201)
-    authenticationApi.login({ email: admin.email, password: admin.password }).then((response) => {
-      token = response.body.authorization
-      return productsApi.create(product, token)
-    }).its('status').should('eq', 201)
+    productsApi.create(product, token).its('status').should('eq', 201)
 
     loginPage.visit()
     loginPage.login(admin.email, admin.password)

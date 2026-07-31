@@ -16,23 +16,48 @@ describe('ServeRest API - Carts and purchase flow', () => {
   let cartActive
 
   beforeEach(() => {
-    const admin = createUser({ administrador: 'true' })
-    const user = createUser()
-    product = createProduct({ preco: 100, quantidade: 10 })
-
-    usersApi.create(admin).then(({ body }) => { adminId = body._id })
-    authenticationApi.login({ email: admin.email, password: admin.password }).then(({ body }) => {
-      adminToken = body.authorization
-      productsApi.create(product, adminToken).then((productResponse) => {
-        expect(productResponse.status).to.eq(201)
-        productId = productResponse.body._id
-      })
-    })
-    usersApi.create(user).then(({ body }) => { userId = body._id })
-    authenticationApi.login({ email: user.email, password: user.password })
-      .then(({ body }) => { userToken = body.authorization })
+    adminId = undefined
+    adminToken = undefined
+    userId = undefined
+    userToken = undefined
+    product = undefined
+    productId = undefined
     cartActive = false
   })
+
+  const prepareUser = () => {
+    const user = createUser()
+    return usersApi.create(user).then(({ body, status }) => {
+      expect(status).to.eq(201)
+      userId = body._id
+      return authenticationApi.login({ email: user.email, password: user.password })
+    }).then(({ body, status }) => {
+      expect(status).to.eq(200)
+      userToken = body.authorization
+    })
+  }
+
+  const prepareProduct = () => {
+    const admin = createUser({ administrador: 'true' })
+    product = createProduct({ preco: 100, quantidade: 10 })
+
+    return usersApi.create(admin).then(({ body, status }) => {
+      expect(status).to.eq(201)
+      adminId = body._id
+      return authenticationApi.login({ email: admin.email, password: admin.password })
+    }).then(({ body, status }) => {
+      expect(status).to.eq(200)
+      adminToken = body.authorization
+      return productsApi.create(product, adminToken)
+    }).then((response) => {
+      expect(response.status).to.eq(201)
+      productId = response.body._id
+    })
+  }
+
+  const prepareCartContext = () => {
+    return prepareProduct().then(() => prepareUser())
+  }
 
   afterEach(() => {
     if (cartActive) cartsApi.cancel(userToken)
@@ -42,7 +67,9 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-001 - Create a cart and calculate totals', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 2 }], userToken).then((response) => {
+    prepareCartContext().then(() => cartsApi.create(
+      [{ idProduto: productId, quantidade: 2 }], userToken
+    )).then((response) => {
       expect(response.status, JSON.stringify(response.body)).to.eq(201)
       expect(response.body.message).to.eq(MESSAGES.CREATED_SUCCESSFULLY)
       cartActive = true
@@ -60,26 +87,31 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-002 - Reduce stock when a cart is created', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 3 }], userToken).then(() => {
+    prepareCartContext().then(() => cartsApi.create(
+      [{ idProduto: productId, quantidade: 3 }], userToken
+    )).then(() => {
       cartActive = true
       productsApi.getById(productId).its('body.quantidade').should('eq', 7)
     })
   })
 
   it('CT-API-CRT-003 - Prevent a user from owning more than one cart', () => {
-    const items = [{ idProduto: productId, quantidade: 1 }]
-
-    cartsApi.create(items, userToken).then(() => {
-      cartActive = true
-      cartsApi.create(items, userToken).then((response) => {
-        expect(response.status).to.eq(400)
-        expect(response.body.message).to.eq(MESSAGES.CART_ALREADY_EXISTS)
+    prepareCartContext().then(() => {
+      const items = [{ idProduto: productId, quantidade: 1 }]
+      return cartsApi.create(items, userToken).then(() => {
+        cartActive = true
+        return cartsApi.create(items, userToken).then((response) => {
+          expect(response.status).to.eq(400)
+          expect(response.body.message).to.eq(MESSAGES.CART_ALREADY_EXISTS)
+        })
       })
     })
   })
 
   it('CT-API-CRT-004 - Reject a quantity above available stock', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 11 }], userToken).then((response) => {
+    prepareCartContext().then(() => cartsApi.create(
+      [{ idProduto: productId, quantidade: 11 }], userToken
+    )).then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.message).to.eq(MESSAGES.INSUFFICIENT_STOCK)
       expect(response.body.item).to.include({ idProduto: productId, quantidadeEstoque: 10 })
@@ -87,28 +119,32 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-005 - Cancel a purchase and restore product stock', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 4 }], userToken).then(() => {
+    prepareCartContext().then(() => cartsApi.create(
+      [{ idProduto: productId, quantidade: 4 }], userToken
+    )).then(() => {
       cartActive = true
-    })
-    cartsApi.cancel(userToken).then((response) => {
+      return cartsApi.cancel(userToken)
+    }).then((response) => {
       expect(response.status).to.eq(200)
       expect(response.body.message).to.eq(MESSAGES.CANCELLED_SUCCESSFULLY)
       cartActive = false
-    })
-    productsApi.getById(productId).its('body.quantidade').should('eq', 10)
+      return productsApi.getById(productId)
+    }).its('body.quantidade').should('eq', 10)
   })
 
   it('CT-API-CRT-006 - Complete a purchase and remove the cart without restoring stock', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 2 }], userToken).then(() => {
+    prepareCartContext().then(() => cartsApi.create(
+      [{ idProduto: productId, quantidade: 2 }], userToken
+    )).then(() => {
       cartActive = true
-    })
-    cartsApi.complete(userToken).then((response) => {
+      return cartsApi.complete(userToken)
+    }).then((response) => {
       expect(response.status).to.eq(200)
       expect(response.body.message).to.eq(MESSAGES.DELETED_SUCCESSFULLY)
       cartActive = false
-    })
-    productsApi.getById(productId).its('body.quantidade').should('eq', 8)
-    cartsApi.list({ idUsuario: userId }).then((response) => {
+      return productsApi.getById(productId)
+    }).its('body.quantidade').should('eq', 8)
+    cy.then(() => cartsApi.list({ idUsuario: userId })).then((response) => {
       expect(response.status).to.eq(200)
       expectCartListContract(response.body)
       expect(response.body.quantidade).to.eq(0)
@@ -123,14 +159,16 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-008 - Reject cart creation without an authentication token', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 1 }]).then((response) => {
+    cartsApi.create([{ idProduto: 'produto-inexistente', quantidade: 1 }]).then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
   })
 
   it('CT-API-CRT-009 - Reject a cart containing an unknown product', () => {
-    cartsApi.create([{ idProduto: 'produto-inexistente', quantidade: 1 }], userToken)
+    prepareUser().then(() => cartsApi.create(
+      [{ idProduto: 'produto-inexistente', quantidade: 1 }], userToken
+    ))
       .then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq('Produto não encontrado')
@@ -139,26 +177,24 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-010 - Reject duplicated products in the same cart', () => {
-    const duplicatedItems = [
+    prepareCartContext().then(() => cartsApi.create([
       { idProduto: productId, quantidade: 1 },
       { idProduto: productId, quantidade: 2 }
-    ]
-
-    cartsApi.create(duplicatedItems, userToken).then((response) => {
+    ], userToken)).then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.message).to.eq('Não é permitido possuir produto duplicado')
     })
   })
 
   it('CT-API-CRT-011 - Report that no cart exists when completing a purchase', () => {
-    cartsApi.complete(userToken).then((response) => {
+    prepareUser().then(() => cartsApi.complete(userToken)).then((response) => {
       expect(response.status).to.eq(200)
       expect(response.body.message).to.eq(MESSAGES.CART_NOT_FOUND)
     })
   })
 
   it('CT-API-CRT-012 - Report that no cart exists when cancelling a purchase', () => {
-    cartsApi.cancel(userToken).then((response) => {
+    prepareUser().then(() => cartsApi.cancel(userToken)).then((response) => {
       expect(response.status).to.eq(200)
       expect(response.body.message).to.eq(MESSAGES.CART_NOT_FOUND)
     })
@@ -179,7 +215,9 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-015 - Reject deleting a user who owns an active cart', () => {
-    cartsApi.create([{ idProduto: productId, quantidade: 1 }], userToken).then(() => {
+    prepareCartContext().then(() => cartsApi.create(
+      [{ idProduto: productId, quantidade: 1 }], userToken
+    )).then(() => {
       cartActive = true
       usersApi.remove(userId).then((response) => {
         expect(response.status).to.eq(400)

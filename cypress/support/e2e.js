@@ -1,6 +1,8 @@
 import './commands'
 
 beforeEach(() => {
-  cy.clearCookies()
-  cy.clearLocalStorage()
+  if (Cypress.spec.relative.includes('frontend')) {
+    cy.clearCookies()
+    cy.clearLocalStorage()
+  }
 })
