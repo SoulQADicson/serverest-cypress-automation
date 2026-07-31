@@ -1,36 +1,46 @@
-# Otimização de performance da suíte
+# Test Suite Performance Optimisation
 
-## Primeira camada
+## Objective
 
-Esta etapa reduz trabalho de infraestrutura sem remover testes, asserções, contratos ou técnicas CTFL. Os 61 casos e as 32 verificações críticas P0 permanecem inalterados.
+The first optimisation layer reduces infrastructure work without removing or weakening tests, assertions, response contracts, product-risk coverage, or CTFL techniques. The suite continues to contain 61 scenarios, including 32 P0 critical-path checks.
 
-### Alterações
+## Implemented changes
 
-- Carrinhos: setup completo apenas nos casos que precisam de administrador, produto e cliente.
-- Produtos: administrador e token são criados somente nos cenários autenticados.
-- Catálogo e lista: dados imutáveis são preparados uma vez por spec; cookies e local storage continuam isolados por teste.
-- Cadastro de produtos: administrador reutilizado dentro do spec, com produtos limpos após cada cenário.
-- Hooks globais: limpeza do navegador restrita aos specs de frontend.
-- Encadeamento explícito: IDs e tokens são resolvidos antes das ações dependentes, evitando condições de corrida na fila do Cypress.
+- Cart tests now create a complete administrator, product, and customer context only when the scenario requires it.
+- Product tests create an administrator and authentication token only for authenticated operations.
+- Catalogue and shopping-list specifications prepare immutable prerequisites once per specification while preserving browser-state isolation before every test.
+- Product-registration tests reuse one administrator within the specification and continue to remove mutable products after each applicable scenario.
+- Global browser cleanup is restricted to frontend specifications and no longer adds irrelevant commands to 46 API tests.
+- Dependent operations are explicitly chained so that tokens and identifiers are resolved before use, preventing race conditions in the Cypress command queue.
 
-### Redução determinística de setup
+## Deterministic setup reduction
 
-| Área | Antes | Depois |
+| Area | Before | After |
 |---|---:|---:|
-| Carrinhos — setups completos | 17 | 8 |
-| Carrinhos — casos sem fixture | 0 | 6 |
-| Produtos — administradores | 15 | 8 |
-| Catálogo/lista — conjuntos completos | 5 | 1 |
-| Cadastro de produtos — administradores | 3 | 1 |
+| Cart scenarios with complete setup | 17 | 8 |
+| Cart scenarios requiring no fixture | 0 | 6 |
+| Product administrators created | 15 | 8 |
+| Complete catalogue/list fixture sets | 5 | 1 |
+| Product-registration administrators | 3 | 1 |
 
-## Validação
+## Validation evidence
 
-- ESLint: aprovado.
-- Specs de carrinhos e produtos sem retries: 32/32 aprovados.
-- Suíte consolidada: 61/61 aprovados.
-- Críticos P0: 32/32 aprovados.
-- Casos removidos ou ignorados: zero.
+- ESLint: passed.
+- Cart and product specifications without retries: 32/32 passed.
+- Consolidated suite: 61/61 passed.
+- P0 critical scenarios: 32/32 passed.
+- Removed, skipped, or weakened scenarios: zero.
 
-Na amostra consolidada, a duração registrada caiu de 219,8 segundos para aproximadamente 202 segundos, ganho próximo de 8%. Como os testes usam um ambiente público compartilhado, latência e carga externa impedem atribuir toda variação ao código. A redução de requisições de setup, entretanto, é determinística e diminui carga, custo e exposição a instabilidade.
+The latest consolidated sample decreased from 219.8 seconds to 186.4 seconds, an improvement of approximately 15.2%. The tests use a shared public environment; therefore, network latency and concurrent load prevent the entire difference from being attributed to code changes. The reduction in setup requests is nevertheless deterministic and lowers execution load, cost, and exposure to environmental instability.
 
-Para um benchmark confiável, execute pelo menos cinco rodadas antes e cinco depois no mesmo período, compare a mediana e mantenha retries e infraestrutura idênticos.
+## Benchmark guidance
+
+A reliable performance comparison should:
+
+1. execute at least five baseline and five optimised runs;
+2. use the same machine, browser, Cypress configuration, retry policy, and network conditions;
+3. compare the median rather than a single result;
+4. retain failure and retry information instead of excluding slow runs;
+5. use an isolated ServeRest instance whenever reproducibility is required.
+
+Parallel execution is intentionally outside this first layer. It requires safe result aggregation and controlled concurrency to avoid increasing contention in the public environment.

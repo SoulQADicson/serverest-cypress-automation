@@ -1,39 +1,47 @@
-# Cobertura de testes do frontend
+# Frontend Test Coverage
 
-## Escopo e abordagem
+## Scope and approach
 
-O mapeamento foi feito sobre as jornadas disponíveis em `https://front.serverest.dev/` e priorizado por risco, conforme os fundamentos CTFL. A cobertura usa particionamento de equivalência, análise de valor limite, tabela de decisão, transição de estado e testes de caso de uso.
+The assessment covers the user journeys currently available at `https://front.serverest.dev/`. Scenarios are prioritised by product risk and designed in accordance with CTFL principles. The suite applies equivalence partitioning, boundary value analysis, decision tables, state-transition testing, and use-case testing.
 
-“Cobertura completa” neste projeto significa cobrir as classes de comportamento relevantes, os caminhos críticos e os principais resultados positivos e negativos. Não significa testar todas as combinações possíveis de valores.
+Within this project, complete coverage means covering relevant behavioural classes, critical paths, and representative positive and negative outcomes. It does not mean testing every theoretical combination of input values.
 
-## Matriz executável
+## Executable coverage matrix
 
-| Domínio | Positivos | Negativos | Casos | Cobertura principal |
+| Domain | Positive | Negative | Total | Principal coverage |
 |---|---:|---:|---:|---|
-| Autenticação e cadastro | 3 | 4 | 7 | Cadastro, login, logout, perfis, credenciais inválidas, duplicidade e obrigatoriedade |
-| Administração de produtos | 1 | 2 | 3 | Cadastro, campos obrigatórios e nome duplicado |
-| Catálogo | 1 | 1 | 2 | Pesquisa exata e produto inexistente |
-| Lista de compras | 3 | 0 | 3 | Inclusão, alteração de quantidade, remoção e estado vazio |
-| **Total UI** | **8** | **7** | **15** | Caminhos críticos disponíveis na interface |
+| Authentication and registration | 3 | 4 | 7 | Registration, login, logout, roles, invalid credentials, duplicate identity, and mandatory fields |
+| Product administration | 1 | 2 | 3 | Product creation, mandatory fields, and duplicate names |
+| Product catalogue | 1 | 1 | 2 | Exact search and unknown product |
+| Shopping list | 3 | 0 | 3 | Addition, quantity transition, removal, and empty state |
+| **Frontend total** | **8** | **7** | **15** | Critical journeys available through the user interface |
 
-As regras de autorização, contratos, CRUD completo, limites de estoque e carrinhos são cobertas em profundidade na camada de API. Isso evita duplicação excessiva na UI e mantém a pirâmide de testes sustentável.
+Authorisation rules, complete CRUD contracts, stock limits, and cart rules are covered in greater depth at the API layer. This distribution avoids unnecessary UI duplication and supports a sustainable test pyramid.
 
-## Estratégia de seletores
+## Selector strategy
 
-Ordem de preferência adotada:
+Selectors follow this order of preference:
 
-1. `data-testid`, centralizado em `cypress/constants/selectors.js`;
-2. dado de negócio único e visível, como o nome do produto;
-3. texto de mensagem apenas quando a própria mensagem é o resultado esperado;
-4. classes CSS somente para delimitar um componente sem identificador estável.
+1. `data-testid`, centralised in `cypress/constants/selectors.js`;
+2. unique, visible business data, such as a generated product name;
+3. visible message text when the message itself is the expected result;
+4. a CSS class only to delimit a component for which no stable identifier exists.
 
-O catálogo não oferece `data-testid` no título nem um identificador por card. Por isso, o teste encontra o nome único do produto e usa `.closest('.card')` apenas para associar o botão “Adicionar à lista” ao produto correto. Essa é uma limitação conhecida do frontend; a melhoria recomendada no produto é expor, por exemplo, `data-testid="product-card-<id>"`.
+The catalogue does not expose a `data-testid` on the product title or a unique identifier on each product card. The automation therefore locates the unique product name and uses `.closest('.card')` solely to associate the relevant “Add to list” action with that product. The recommended product improvement is to expose an identifier such as `data-testid="product-card-<id>"`.
 
-Não são usados seletores posicionais (`:nth-child`), XPath, classes de estilo para ações, esperas fixas ou IDs gerados dinamicamente.
+The suite does not use positional selectors such as `:nth-child`, XPath expressions, styling classes as direct action targets, arbitrary fixed waits, or dynamically generated DOM identifiers.
 
-## Lacunas fora da automação UI
+## Test isolation and data management
 
-- Os relatórios administrativos aparecem como funcionalidade em construção.
-- A listagem administrativa de usuários/produtos não oferece identificadores estáveis em todas as linhas e ações.
-- Regras profundas de carrinho, estoque e autorização permanecem na API, onde são mais rápidas e determinísticas.
-- Acessibilidade, desempenho, responsividade visual e segurança especializada exigem ferramentas e critérios próprios; não são substituídos por testes funcionais Cypress.
+- Browser cookies and local storage are cleared before every frontend scenario.
+- Unique mutable data is created through factories.
+- Shared spec-level fixtures are limited to immutable prerequisites.
+- Products, users, and carts created by the suite are removed through teardown hooks.
+- UI authentication remains part of scenarios that explicitly validate login or role-based navigation.
+
+## Known limitations outside functional UI automation
+
+- Administrative reporting is presented by the application as a feature under construction.
+- Not every row-level administrative action exposes a stable selector.
+- Detailed cart, stock, and authorisation rules remain at the faster and more deterministic API layer.
+- Accessibility, performance, visual responsiveness, and specialised security testing require dedicated criteria and tools; Cypress functional tests do not replace those disciplines.

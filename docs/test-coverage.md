@@ -1,64 +1,85 @@
-# Estratégia e matriz de cobertura
+# Test Strategy and Coverage Matrix
 
-## Objetivo
+## Objective
 
-Esta suíte protege os caminhos críticos da loja ServeRest com uma abordagem baseada em risco. A API concentra a maior parte das regras de negócio e contratos; a interface cobre jornadas essenciais do usuário e do administrador.
+This suite protects the critical ServeRest store journeys through a risk-based approach. The API layer covers most business rules and service contracts, while the frontend layer covers essential customer and administrator journeys.
 
-O catálogo executável está em `cypress/fixtures/testCatalog.json`. Cada teste possui:
+The executable catalogue is maintained in `cypress/fixtures/testCatalog.json`. Every automated test includes:
 
-- identificador estável;
-- camada (`API` ou `UI`);
-- domínio funcional;
-- prioridade baseada em risco (`P0` crítico e `P1` alto);
-- técnica de projeto de teste alinhada aos fundamentos CTFL;
-- risco de produto mitigado.
+- a stable identifier;
+- a test layer (`API` or `UI`);
+- a functional domain;
+- a risk-based priority (`P0` critical, `P1` high, or `P2` supplementary);
+- a CTFL-aligned test design technique;
+- the mitigated product risk.
 
-Essas informações são incorporadas automaticamente ao relatório HTML.
+This metadata is incorporated automatically into the HTML report.
 
-## Cobertura por domínio
+## Coverage by domain
 
-| Domínio | API | UI | Regras cobertas |
+| Domain | API | UI | Principal rules covered |
 |---|---:|---:|---|
-| Autenticação | 3 | 5 | Login válido, credenciais inválidas, campos obrigatórios, cadastro, duplicidade e logout |
-| Usuários | 11 | Integrado à autenticação | CRUD, campos inválidos, IDs, recurso inexistente, unicidade, upsert e filtros |
-| Produtos | 15 | 1 | CRUD, limites, IDs, recurso inexistente, token, perfil, duplicidade, carrinho ativo e filtros |
-| Carrinhos | 17 | Coberto pela regra na API | Criação, totais, estoque, autenticação, IDs, produtos inválidos/duplicados, carrinho inexistente, cancelamento e conclusão |
-| **Total** | **46** | **15** | **61 casos automatizados** |
+| Authentication | 3 | 7 | Valid login, invalid credentials, mandatory fields, registration, duplicate identity, role-based routing, and logout |
+| Users | 11 | Integrated into authentication | CRUD, invalid fields, identifiers, unknown resources, uniqueness, documented upsert behaviour, and filters |
+| Products | 15 | 3 | CRUD, boundaries, identifiers, unknown resources, authentication, authorisation, duplicates, active carts, and filters |
+| Carts | 17 | 0 | Creation, totals, stock, authentication, identifiers, invalid or duplicate products, missing carts, cancellation, and completion |
+| Catalogue | 0 | 2 | Exact product search and unknown search result |
+| Shopping list | 0 | 3 | Addition, quantity changes, clearing, and empty state |
+| **Total** | **46** | **15** | **61 automated scenarios** |
 
-## Caminhos críticos P0
+## P0 critical paths
 
-1. Cadastro e autenticação do cliente.
-2. Rejeição de credenciais inválidas.
-3. Encerramento de sessão.
-4. Autorização exclusiva de administrador para manutenção de produtos.
-5. Cadastro e manutenção do catálogo.
-6. Criação do carrinho com cálculo de totais.
-7. Redução de estoque na reserva.
-8. Bloqueio de compra acima do estoque.
-9. Cancelamento com reposição de estoque.
-10. Conclusão da compra sem reposição de estoque.
+The executable catalogue currently identifies 32 P0 scenarios. They protect the following critical capabilities:
 
-## Técnicas CTFL aplicadas
+1. customer registration and authentication;
+2. rejection of invalid credentials;
+3. secure session termination;
+4. correct role-based routing;
+5. administrator-only product maintenance;
+6. product publication and catalogue discovery;
+7. product selection and quantity transitions;
+8. cart creation and total calculation;
+9. stock reduction upon reservation;
+10. prevention of purchases above available stock;
+11. stock restoration following cancellation;
+12. purchase completion without inappropriate stock restoration;
+13. protection against unauthenticated or unauthorised state changes;
+14. prevention of orphaned carts and invalid product deletion.
 
-| Técnica | Aplicação |
+## CTFL-aligned techniques
+
+| Technique | Application |
 |---|---|
-| Particionamento de equivalência | Credenciais, filtros, dados válidos e inválidos |
-| Análise de valor limite | Quantidade solicitada imediatamente acima do estoque |
-| Tabela de decisão | Token ausente, usuário padrão, administrador e recursos duplicados |
-| Transição de estado | Criar/alterar/excluir recursos, reservar/restaurar/consumir estoque |
-| Teste de caso de uso | Jornadas completas de cadastro, login, produto, carrinho e compra |
+| Equivalence partitioning | Credentials, filters, valid data, invalid data, and unknown resources |
+| Boundary value analysis | Product price, stock, cart totals, malformed identifiers, and quantities immediately above stock |
+| Decision-table testing | Missing token, standard user, administrator, duplicate resources, and role-based outcomes |
+| State-transition testing | Create, update, delete, reserve, restore, consume, add, change quantity, and clear |
+| Use-case testing | End-to-end registration, login, product, cart, and purchase journeys |
 
-## Princípios de manutenção
+## Maintainability principles
 
-- Dados mutáveis recebem identificadores únicos para permitir repetição e reduzir colisões no ambiente público.
-- Usuários, produtos e carrinhos criados pela automação são removidos nos hooks de teardown.
-- Serviços de API centralizam rotas e autenticação.
-- Page Objects encapsulam seletores estáveis `data-testid`.
-- Schemas reutilizáveis validam estrutura, tipos e invariantes.
-- Os testes verificam status HTTP, contrato, regra de negócio e efeito persistido.
-- O relatório diferencia cobertura planejada de casos efetivamente executados.
-- Retries são usados apenas no modo headless por causa da dependência de um ambiente público externo.
+- Mutable test data receives unique identifiers to support repeatability and reduce collisions.
+- Users, products, and carts created by automation are removed through teardown hooks.
+- Immutable prerequisites may be shared within a specification when test independence is preserved.
+- API services centralise routes, requests, and authentication headers.
+- Page Objects encapsulate stable `data-testid` selectors.
+- Reusable schemas validate response structure, types, and invariants.
+- Tests verify HTTP status, contract, business rule, and persisted effects where applicable.
+- The report distinguishes catalogued coverage from scenarios executed in a selected run.
+- Retries are enabled only in headless mode to mitigate transient failures in the public external environment.
+- Performance optimisations must not remove cases, assertions, or independent mutable state.
 
-## Limitações conhecidas
+## Current validation baseline
 
-O ambiente `serverest.dev` é público e compartilhado. Dados podem ser alterados por outras execuções, e a disponibilidade da rede não está sob controle da suíte. Para pipelines de maior criticidade, prefira executar uma instância isolada e versionada do ServeRest.
+- Automated scenarios: 61.
+- API scenarios: 46.
+- Frontend scenarios: 15.
+- P0 critical scenarios: 32.
+- Latest complete result: 61/61 passed and 32/32 P0 passed.
+- Latest recorded duration after first-layer optimisation: 186.4 seconds.
+
+## Known limitations
+
+The `serverest.dev` environment is public and shared. Data may be affected by concurrent executions, and network availability is outside the suite's control. Critical pipelines, reproducible benchmarks, and release evidence should use an isolated and version-controlled ServeRest instance.
+
+Functional Cypress automation does not replace accessibility, load, visual-regression, penetration, or exploratory testing. Those activities require separate objectives, environments, and specialised tools.
