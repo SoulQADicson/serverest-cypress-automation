@@ -1,10 +1,10 @@
-import { loginPage } from '../../pages/LoginPage'
 import { catalogPage } from '../../pages/CatalogPage'
 import { shoppingListPage } from '../../pages/ShoppingListPage'
 import { authenticationApi } from '../../services/authenticationApi'
 import { productsApi } from '../../services/productsApi'
 import { usersApi } from '../../services/usersApi'
 import { createProduct, createUser } from '../../utils/dataFactory'
+import { UI_ROUTES } from '../../constants/routes'
 
 describe('Frontend catalog and shopping list', () => {
   let customer
@@ -27,8 +27,8 @@ describe('Frontend catalog and shopping list', () => {
   })
 
   beforeEach(() => {
-    loginPage.visit()
-    loginPage.login(customer.email, customer.password)
+    cy.loginUiSession(customer.email, customer.password, UI_ROUTES.HOME)
+    cy.visit(UI_ROUTES.HOME)
   })
 
   after(() => {

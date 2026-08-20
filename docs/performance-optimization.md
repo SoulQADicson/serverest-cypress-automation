@@ -2,7 +2,7 @@
 
 ## Objective
 
-The first optimisation layer reduces infrastructure work without removing or weakening tests, assertions, response contracts, product-risk coverage, or CTFL techniques. The suite continues to contain 61 scenarios, including 32 P0 critical-path checks.
+The optimisation layers reduce infrastructure work without removing or weakening tests, assertions, response contracts, product-risk coverage, or CTFL techniques. The suite now contains 64 scenarios, including 35 P0 critical-path checks.
 
 ## Implemented changes
 
@@ -10,8 +10,9 @@ The first optimisation layer reduces infrastructure work without removing or wea
 - Product tests create an administrator and authentication token only for authenticated operations.
 - Catalogue and shopping-list specifications prepare immutable prerequisites once per specification while preserving browser-state isolation before every test.
 - Product-registration tests reuse one administrator within the specification and continue to remove mutable products after each applicable scenario.
-- Global browser cleanup is restricted to frontend specifications and no longer adds irrelevant commands to 46 API tests.
+- Global browser cleanup is restricted to frontend specifications and no longer adds irrelevant commands to 48 API tests.
 - Dependent operations are explicitly chained so that tokens and identifiers are resolved before use, preventing race conditions in the Cypress command queue.
+- Repeated catalogue and product-administration journeys restore validated `cy.session()` state; login-focused scenarios still authenticate through the UI.
 
 ## Deterministic setup reduction
 
@@ -27,8 +28,9 @@ The first optimisation layer reduces infrastructure work without removing or wea
 
 - ESLint: passed.
 - Cart and product specifications without retries: 32/32 passed.
-- Consolidated suite: 61/61 passed.
-- P0 critical scenarios: 32/32 passed.
+- Previous 61-scenario consolidated baseline: 61/61 passed.
+- Previous P0 baseline: 32/32 passed.
+- Current expanded suite: 64/64 passed, 35/35 P0 passed, zero flaky tests, in 97.8 seconds on the recorded Electron run.
 - Removed, skipped, or weakened scenarios: zero.
 
 The latest consolidated sample decreased from 219.8 seconds to 186.4 seconds, an improvement of approximately 15.2%. The tests use a shared public environment; therefore, network latency and concurrent load prevent the entire difference from being attributed to code changes. The reduction in setup requests is nevertheless deterministic and lowers execution load, cost, and exposure to environmental instability.

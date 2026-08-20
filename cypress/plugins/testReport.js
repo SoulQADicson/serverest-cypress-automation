@@ -47,12 +47,15 @@ const normalizeTests = (results, catalog) => {
       const id = title.match(/^CT-[A-Z]+-[A-Z]+-\d+/)?.[0] || 'SEM-ID'
       const metadata = catalogById.get(id) || {}
       const lastAttempt = test.attempts?.at(-1)
+      const attempts = test.attempts?.length || 1
 
       return {
         id,
         spec: run.spec?.relative || run.spec?.name || 'Unknown specification',
         title: title.replace(`${id} - `, ''),
         state: test.state,
+        attempts,
+        flaky: test.state === 'passed' && attempts > 1,
         duration: test.wallClockDuration || test.attempts?.reduce(
           (total, attempt) => total + (attempt.wallClockDuration || attempt.duration || 0),
           0
@@ -85,6 +88,7 @@ function generateTestReport(results) {
     passed: tests.filter(({ state }) => state === 'passed').length,
     failed: tests.filter(({ state }) => state === 'failed').length,
     skipped: tests.filter(({ state }) => ['pending', 'skipped'].includes(state)).length,
+    flaky: tests.filter(({ flaky }) => flaky).length,
     criticalTotal: criticalTests.length,
     criticalPassed,
     criticalPassRate: criticalTests.length ? Math.round((criticalPassed / criticalTests.length) * 100) : 0,
@@ -98,7 +102,8 @@ function generateTestReport(results) {
   const bars = [
     ['Passed', summary.passed, 'passed'],
     ['Failed', summary.failed, 'failed'],
-    ['Skipped', summary.skipped, 'skipped']
+    ['Skipped', summary.skipped, 'skipped'],
+    ['Flaky', summary.flaky, 'flaky']
   ].map(([label, value, className]) =>
     `<div class="bar-row"><span>${label}</span><div class="track"><div class="bar ${className}" style="width:${(value / max) * 100}%"></div></div><strong>${value}</strong></div>`
   ).join('')
@@ -117,7 +122,7 @@ function generateTestReport(results) {
     <td>${escapeHtml(test.title)}<small>Risk: ${escapeHtml(test.risk)}</small>${test.error ? `<details><summary>Error</summary><pre>${escapeHtml(test.error)}</pre></details>` : ''}</td>
     <td><span class="priority ${escapeHtml(test.priority)}">${escapeHtml(test.priority)}</span></td>
     <td>${escapeHtml(test.technique)}</td>
-    <td><span class="status ${escapeHtml(test.state)}">${escapeHtml(test.state)}</span></td>
+    <td><span class="status ${escapeHtml(test.state)}">${escapeHtml(test.flaky ? 'passed (flaky)' : test.state)}</span><small>${test.attempts} attempt(s)</small></td>
     <td>${test.duration ? `${test.duration} ms` : 'N/D'}</td>
   </tr>`).join('')
 
@@ -131,6 +136,7 @@ function generateTestReport(results) {
     <div class="card">Failed<strong>${summary.failed}</strong></div>
     <div class="card critical">P0 critical<strong>${summary.criticalPassed}/${summary.criticalTotal}</strong></div>
     <div class="card critical">P0 pass rate<strong>${summary.criticalPassRate}%</strong></div>
+    <div class="card">Flaky<strong>${summary.flaky}</strong></div>
     <div class="card">Duration<strong>${(summary.duration / 1000).toFixed(1)} s</strong></div>
   </section>
   <section class="panel"><h2>Coverage by domain</h2><div class="domain-grid">${domainCards}</div></section>

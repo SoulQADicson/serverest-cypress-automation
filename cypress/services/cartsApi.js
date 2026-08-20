@@ -1,23 +1,23 @@
 import { API_ROUTES } from '../constants/routes'
-import { apiRequest } from './request'
+import { apiRequest, apiRequestAllowFailure } from './request'
+
+const authenticatedRequest = (request, method, url, token, body) => request({
+  method,
+  url,
+  body,
+  headers: token ? { authorization: token } : undefined,
+  log: false
+})
 
 export const cartsApi = {
   list: (query = {}) => apiRequest({ url: API_ROUTES.CARTS, qs: query }),
-  create: (products, token) => apiRequest({
-    method: 'POST',
-    url: API_ROUTES.CARTS,
-    body: { produtos: products },
-    headers: token ? { authorization: token } : undefined
-  }),
+  create: (products, token) => authenticatedRequest(apiRequest, 'POST', API_ROUTES.CARTS, token, { produtos: products }),
   getById: (id) => apiRequest({ url: `${API_ROUTES.CARTS}/${id}` }),
-  complete: (token) => apiRequest({
-    method: 'DELETE',
-    url: `${API_ROUTES.CARTS}/concluir-compra`,
-    headers: token ? { authorization: token } : undefined
-  }),
-  cancel: (token) => apiRequest({
-    method: 'DELETE',
-    url: `${API_ROUTES.CARTS}/cancelar-compra`,
-    headers: token ? { authorization: token } : undefined
-  })
+  complete: (token) => authenticatedRequest(apiRequest, 'DELETE', `${API_ROUTES.CARTS}/concluir-compra`, token),
+  cancel: (token) => authenticatedRequest(apiRequest, 'DELETE', `${API_ROUTES.CARTS}/cancelar-compra`, token),
+  attemptList: (query = {}) => apiRequestAllowFailure({ url: API_ROUTES.CARTS, qs: query }),
+  attemptCreate: (products, token) => authenticatedRequest(apiRequestAllowFailure, 'POST', API_ROUTES.CARTS, token, { produtos: products }),
+  attemptGetById: (id) => apiRequestAllowFailure({ url: `${API_ROUTES.CARTS}/${id}` }),
+  attemptComplete: (token) => authenticatedRequest(apiRequestAllowFailure, 'DELETE', `${API_ROUTES.CARTS}/concluir-compra`, token),
+  attemptCancel: (token) => authenticatedRequest(apiRequestAllowFailure, 'DELETE', `${API_ROUTES.CARTS}/cancelar-compra`, token)
 }

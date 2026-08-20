@@ -9,10 +9,15 @@
     "test:e2e": "node scripts/cypress.js run --spec \"cypress/e2e/frontend/**/*.cy.js\"",
     "test:api": "node scripts/cypress.js run --spec \"cypress/e2e/api/**/*.cy.js\"",
     "test:report": "node scripts/cypress.js run",
+    "report:github": "node scripts/github-summary.js",
+    "validate:catalog": "node scripts/validate-test-catalog.js",
+    "validate:style": "node scripts/validate-test-style.js",
+    "audit:dependencies": "npm audit --audit-level=high",
     "lint": "eslint .",
-    "quality": "npm run lint && npm test",
-    "quality:api": "npm run lint && npm run test:api",
-    "quality:front": "npm run lint && npm run test:e2e",
+    "quality:static": "npm run lint && npm run validate:catalog && npm run validate:style",
+    "quality": "npm run quality:static && npm test",
+    "quality:api": "npm run quality:static && npm run test:api",
+    "quality:front": "npm run quality:static && npm run test:e2e",
     "verify": "node scripts/cypress.js verify"
   },
   "devDependencies": {

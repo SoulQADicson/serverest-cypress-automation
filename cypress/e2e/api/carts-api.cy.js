@@ -60,10 +60,10 @@ describe('ServeRest API - Carts and purchase flow', () => {
   }
 
   afterEach(() => {
-    if (cartActive) cartsApi.cancel(userToken)
-    if (productId) productsApi.remove(productId, adminToken)
-    if (userId) usersApi.remove(userId)
-    if (adminId) usersApi.remove(adminId)
+    if (cartActive) cartsApi.cancel(userToken).its('status').should('eq', 200)
+    if (productId) cy.deleteProductById(productId, adminToken)
+    if (userId) cy.deleteUserById(userId)
+    if (adminId) cy.deleteUserById(adminId)
   })
 
   it('CT-API-CRT-001 - Create a cart and calculate totals', () => {
@@ -100,7 +100,7 @@ describe('ServeRest API - Carts and purchase flow', () => {
       const items = [{ idProduto: productId, quantidade: 1 }]
       return cartsApi.create(items, userToken).then(() => {
         cartActive = true
-        return cartsApi.create(items, userToken).then((response) => {
+        return cartsApi.attemptCreate(items, userToken).then((response) => {
           expect(response.status).to.eq(400)
           expect(response.body.message).to.eq(MESSAGES.CART_ALREADY_EXISTS)
         })
@@ -109,7 +109,7 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-004 - Reject a quantity above available stock', () => {
-    prepareCartContext().then(() => cartsApi.create(
+    prepareCartContext().then(() => cartsApi.attemptCreate(
       [{ idProduto: productId, quantidade: 11 }], userToken
     )).then((response) => {
       expect(response.status).to.eq(400)
@@ -152,21 +152,21 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-007 - Return not found for an unknown cart id', () => {
-    cartsApi.getById('ZZZZZZZZZZZZZZZZ').then((response) => {
+    cartsApi.attemptGetById('ZZZZZZZZZZZZZZZZ').then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body).to.deep.eq({ message: 'Carrinho não encontrado' })
     })
   })
 
   it('CT-API-CRT-008 - Reject cart creation without an authentication token', () => {
-    cartsApi.create([{ idProduto: 'produto-inexistente', quantidade: 1 }]).then((response) => {
+    cartsApi.attemptCreate([{ idProduto: 'produto-inexistente', quantidade: 1 }]).then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
   })
 
   it('CT-API-CRT-009 - Reject a cart containing an unknown product', () => {
-    prepareUser().then(() => cartsApi.create(
+    prepareUser().then(() => cartsApi.attemptCreate(
       [{ idProduto: 'produto-inexistente', quantidade: 1 }], userToken
     ))
       .then((response) => {
@@ -177,7 +177,7 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-010 - Reject duplicated products in the same cart', () => {
-    prepareCartContext().then(() => cartsApi.create([
+    prepareCartContext().then(() => cartsApi.attemptCreate([
       { idProduto: productId, quantidade: 1 },
       { idProduto: productId, quantidade: 2 }
     ], userToken)).then((response) => {
@@ -201,14 +201,14 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-013 - Reject completing a purchase without an authentication token', () => {
-    cartsApi.complete().then((response) => {
+    cartsApi.attemptComplete().then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
   })
 
   it('CT-API-CRT-014 - Reject cancelling a purchase without an authentication token', () => {
-    cartsApi.cancel().then((response) => {
+    cartsApi.attemptCancel().then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
@@ -219,7 +219,7 @@ describe('ServeRest API - Carts and purchase flow', () => {
       [{ idProduto: productId, quantidade: 1 }], userToken
     )).then(() => {
       cartActive = true
-      usersApi.remove(userId).then((response) => {
+      usersApi.attemptRemove(userId).then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq('Não é permitido excluir usuário com carrinho cadastrado')
         expect(response.body.idCarrinho).to.be.a('string').and.not.be.empty
@@ -228,14 +228,14 @@ describe('ServeRest API - Carts and purchase flow', () => {
   })
 
   it('CT-API-CRT-016 - Reject a cart filter below the documented total-price boundary', () => {
-    cartsApi.list({ precoTotal: 0 }).then((response) => {
+    cartsApi.attemptList({ precoTotal: 0 }).then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.precoTotal).to.be.a('string').and.not.be.empty
     })
   })
 
   it('CT-API-CRT-017 - Reject a malformed cart id', () => {
-    cartsApi.getById('invalid-id').then((response) => {
+    cartsApi.attemptGetById('invalid-id').then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.id).to.include('16 caracteres alfanuméricos')
     })

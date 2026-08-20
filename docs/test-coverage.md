@@ -19,17 +19,17 @@ This metadata is incorporated automatically into the HTML report.
 
 | Domain | API | UI | Principal rules covered |
 |---|---:|---:|---|
-| Authentication | 3 | 7 | Valid login, invalid credentials, mandatory fields, registration, duplicate identity, role-based routing, and logout |
+| Authentication and security | 5 | 8 | Valid login, invalid credentials, malformed and revoked tokens, mandatory fields, registration, effective authorisation, role-based routing, and logout |
 | Users | 11 | Integrated into authentication | CRUD, invalid fields, identifiers, unknown resources, uniqueness, documented upsert behaviour, and filters |
 | Products | 15 | 3 | CRUD, boundaries, identifiers, unknown resources, authentication, authorisation, duplicates, active carts, and filters |
 | Carts | 17 | 0 | Creation, totals, stock, authentication, identifiers, invalid or duplicate products, missing carts, cancellation, and completion |
 | Catalogue | 0 | 2 | Exact product search and unknown search result |
 | Shopping list | 0 | 3 | Addition, quantity changes, clearing, and empty state |
-| **Total** | **46** | **15** | **61 automated scenarios** |
+| **Total** | **48** | **16** | **64 automated scenarios** |
 
 ## P0 critical paths
 
-The executable catalogue currently identifies 32 P0 scenarios. They protect the following critical capabilities:
+The executable catalogue currently identifies 35 P0 scenarios. They protect the following critical capabilities:
 
 1. customer registration and authentication;
 2. rejection of invalid credentials;
@@ -66,16 +66,16 @@ The executable catalogue currently identifies 32 P0 scenarios. They protect the 
 - Reusable schemas validate response structure, types, and invariants.
 - Tests verify HTTP status, contract, business rule, and persisted effects where applicable.
 - The report distinguishes catalogued coverage from scenarios executed in a selected run.
-- Retries are enabled only in headless mode to mitigate transient failures in the public external environment.
+- Retries are enabled only in headless mode; every attempt is reported and a recovered test is classified as flaky.
 - Performance optimisations must not remove cases, assertions, or independent mutable state.
 
 ## Current validation baseline
 
-- Automated scenarios: 61.
-- API scenarios: 46.
-- Frontend scenarios: 15.
-- P0 critical scenarios: 32.
-- Latest complete result: 61/61 passed and 32/32 P0 passed.
+- Automated scenarios: 64.
+- API scenarios: 48.
+- Frontend scenarios: 16.
+- P0 critical scenarios: 35.
+- Latest complete result: 64/64 passed, 35/35 P0 passed, and zero flaky tests.
 - Latest recorded duration after first-layer optimisation: 186.4 seconds.
 
 ## Known limitations

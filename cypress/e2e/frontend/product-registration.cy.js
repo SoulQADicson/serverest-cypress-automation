@@ -1,4 +1,3 @@
-import { loginPage } from '../../pages/LoginPage'
 import { adminProductsPage } from '../../pages/AdminProductsPage'
 import { MESSAGES } from '../../constants/messages'
 import { UI_ROUTES } from '../../constants/routes'
@@ -33,8 +32,8 @@ describe('Frontend product registration', () => {
   it('CT-UI-PRD-001 - Register a new product as an administrator', () => {
     product = createProduct()
 
-    loginPage.visit()
-    loginPage.login(admin.email, admin.password)
+    cy.loginUiSession(admin.email, admin.password, UI_ROUTES.ADMIN_HOME)
+    cy.visit(UI_ROUTES.ADMIN_HOME)
     adminProductsPage.openCreation()
     cy.intercept('POST', '**/produtos').as('createProduct')
     adminProductsPage.create(product)
@@ -44,18 +43,18 @@ describe('Frontend product registration', () => {
       expect(response.body).to.include({ message: MESSAGES.CREATED_SUCCESSFULLY })
       expect(response.body._id).to.be.a('string').and.not.be.empty
     })
-    cy.url().should('include', UI_ROUTES.ADMIN_PRODUCTS)
+    cy.location('pathname').should('eq', UI_ROUTES.ADMIN_PRODUCTS)
     cy.contains('td', product.nome).should('be.visible')
   })
 
   it('CT-UI-PRD-002 - Validate required product fields before submission', () => {
-    loginPage.visit()
-    loginPage.login(admin.email, admin.password)
+    cy.loginUiSession(admin.email, admin.password, UI_ROUTES.ADMIN_HOME)
+    cy.visit(UI_ROUTES.ADMIN_HOME)
     adminProductsPage.openCreation()
     adminProductsPage.submit()
 
     adminProductsPage.requiredFieldsShouldBeInvalid()
-    cy.url().should('include', '/admin/cadastrarprodutos')
+    cy.location('pathname').should('eq', UI_ROUTES.ADMIN_CREATE_PRODUCTS)
   })
 
   it('CT-UI-PRD-003 - Prevent registration of a duplicated product', () => {
@@ -63,12 +62,12 @@ describe('Frontend product registration', () => {
 
     productsApi.create(product, token).its('status').should('eq', 201)
 
-    loginPage.visit()
-    loginPage.login(admin.email, admin.password)
+    cy.loginUiSession(admin.email, admin.password, UI_ROUTES.ADMIN_HOME)
+    cy.visit(UI_ROUTES.ADMIN_HOME)
     adminProductsPage.openCreation()
     adminProductsPage.create(product)
 
     cy.contains(MESSAGES.PRODUCT_ALREADY_EXISTS).should('be.visible')
-    cy.url().should('include', '/admin/cadastrarprodutos')
+    cy.location('pathname').should('eq', UI_ROUTES.ADMIN_CREATE_PRODUCTS)
   })
 })

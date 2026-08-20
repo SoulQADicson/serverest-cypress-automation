@@ -33,8 +33,8 @@ describe('ServeRest API - Products', () => {
   afterEach(() => {
     const ids = [...productIds]
     productIds.clear()
-    ids.forEach((id) => productsApi.remove(id, adminToken))
-    if (adminId) usersApi.remove(adminId)
+    ids.forEach((id) => cy.deleteProductById(id, adminToken))
+    if (adminId) cy.deleteUserById(adminId)
     adminId = undefined
   })
 
@@ -68,7 +68,7 @@ describe('ServeRest API - Products', () => {
   })
 
   it('CT-API-PRD-003 - Reject product creation without an authentication token', () => {
-    productsApi.create(createProduct()).then((response) => {
+    productsApi.attemptCreate(createProduct()).then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
@@ -82,7 +82,7 @@ describe('ServeRest API - Products', () => {
       standardUserId = body._id
     })
     authenticationApi.login({ email: standardUser.email, password: standardUser.password }).then(({ body }) => {
-      productsApi.create(createProduct(), body.authorization).then((response) => {
+      productsApi.attemptCreate(createProduct(), body.authorization).then((response) => {
         expect(response.status).to.eq(403)
         expect(response.body.message).to.eq(MESSAGES.ADMIN_ONLY)
       })
@@ -95,7 +95,7 @@ describe('ServeRest API - Products', () => {
 
     prepareAdministrator().then(() => productsApi.create(product, adminToken)).then(({ body }) => {
       productIds.add(body._id)
-      productsApi.create(product, adminToken).then((response) => {
+      productsApi.attemptCreate(product, adminToken).then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq(MESSAGES.PRODUCT_ALREADY_EXISTS)
       })
@@ -120,14 +120,14 @@ describe('ServeRest API - Products', () => {
   })
 
   it('CT-API-PRD-007 - Return not found for an unknown product id', () => {
-    productsApi.getById('ZZZZZZZZZZZZZZZZ').then((response) => {
+    productsApi.attemptGetById('ZZZZZZZZZZZZZZZZ').then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body).to.deep.eq({ message: 'Produto não encontrado' })
     })
   })
 
   it('CT-API-PRD-008 - Reject invalid product field boundaries', () => {
-    prepareAdministrator().then(() => productsApi.create(
+    prepareAdministrator().then(() => productsApi.attemptCreate(
       { nome: '', preco: 0, descricao: '', quantidade: -1 },
       adminToken
     )).then((response) => {
@@ -137,14 +137,14 @@ describe('ServeRest API - Products', () => {
   })
 
   it('CT-API-PRD-009 - Reject product update without an authentication token', () => {
-    productsApi.update('produto-inexistente', createProduct()).then((response) => {
+    productsApi.attemptUpdate('produto-inexistente', createProduct()).then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
   })
 
   it('CT-API-PRD-010 - Reject product deletion without an authentication token', () => {
-    productsApi.remove('produto-inexistente').then((response) => {
+    productsApi.attemptRemove('produto-inexistente').then((response) => {
       expect(response.status).to.eq(401)
       expect(response.body.message).to.eq(MESSAGES.INVALID_TOKEN)
     })
@@ -163,11 +163,11 @@ describe('ServeRest API - Products', () => {
       const standardToken = body.authorization
       const productId = [...productIds][0]
 
-      productsApi.update(productId, { ...product, preco: 200 }, standardToken).then((response) => {
+      productsApi.attemptUpdate(productId, { ...product, preco: 200 }, standardToken).then((response) => {
         expect(response.status).to.eq(403)
         expect(response.body.message).to.eq(MESSAGES.ADMIN_ONLY)
       })
-      productsApi.remove(productId, standardToken).then((response) => {
+      productsApi.attemptRemove(productId, standardToken).then((response) => {
         expect(response.status).to.eq(403)
         expect(response.body.message).to.eq(MESSAGES.ADMIN_ONLY)
       })
@@ -187,7 +187,7 @@ describe('ServeRest API - Products', () => {
       productIds.add(body._id)
     })
     cy.then(() => {
-      productsApi.update(
+      productsApi.attemptUpdate(
         secondProductId,
         { ...secondProduct, nome: firstProduct.nome },
         adminToken
@@ -214,7 +214,7 @@ describe('ServeRest API - Products', () => {
       cartsApi.create([{ idProduto: body._id, quantidade: 1 }], standardToken)
         .its('status').should('eq', 201)
       cartActive = true
-      productsApi.remove(body._id, adminToken).then((response) => {
+      productsApi.attemptRemove(body._id, adminToken).then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq('Não é permitido excluir produto que faz parte de carrinho')
       })
@@ -226,14 +226,14 @@ describe('ServeRest API - Products', () => {
   })
 
   it('CT-API-PRD-014 - Reject a product filter below the documented price boundary', () => {
-    productsApi.list({ preco: 0 }).then((response) => {
+    productsApi.attemptList({ preco: 0 }).then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.preco).to.be.a('string').and.not.be.empty
     })
   })
 
   it('CT-API-PRD-015 - Reject a malformed product id', () => {
-    productsApi.getById('invalid-id').then((response) => {
+    productsApi.attemptGetById('invalid-id').then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.id).to.include('16 caracteres alfanuméricos')
     })

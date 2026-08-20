@@ -9,7 +9,7 @@ describe('ServeRest API - Users', () => {
   afterEach(() => {
     const ids = [...idsToDelete]
     idsToDelete.clear()
-    ids.forEach((id) => usersApi.remove(id))
+    ids.forEach((id) => cy.deleteUserById(id))
   })
 
   it('CT-API-USR-001 - Create and retrieve a user by id', () => {
@@ -23,7 +23,7 @@ describe('ServeRest API - Users', () => {
 
       usersApi.getById(response.body._id).then((getResponse) => {
         expect(getResponse.status).to.eq(200)
-        expectUserContract(getResponse.body)
+        expectUserContract(getResponse.body, { allowSensitiveFields: true })
         expect(getResponse.body).to.include(user)
       })
     })
@@ -36,7 +36,7 @@ describe('ServeRest API - Users', () => {
       idsToDelete.add(body._id)
       usersApi.list({ email: user.email }).then((response) => {
         expect(response.status).to.eq(200)
-        expectUserListContract(response.body)
+        expectUserListContract(response.body, { allowSensitiveFields: true })
         expect(response.body.quantidade).to.eq(1)
         expect(response.body.usuarios[0]).to.include({ email: user.email })
       })
@@ -48,7 +48,7 @@ describe('ServeRest API - Users', () => {
 
     usersApi.create(user).then(({ body }) => {
       idsToDelete.add(body._id)
-      usersApi.create({ ...user, nome: 'Duplicated user' }).then((response) => {
+      usersApi.attemptCreate({ ...user, nome: 'Duplicated user' }).then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq(MESSAGES.EMAIL_ALREADY_USED)
         expect(response.body).not.to.have.property('_id')
@@ -78,7 +78,7 @@ describe('ServeRest API - Users', () => {
         expect(response.status).to.eq(200)
         expect(response.body.message).to.eq(MESSAGES.DELETED_SUCCESSFULLY)
       })
-      usersApi.getById(body._id).then((response) => {
+      usersApi.attemptGetById(body._id).then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq('Usuário não encontrado')
       })
@@ -86,7 +86,7 @@ describe('ServeRest API - Users', () => {
   })
 
   it('CT-API-USR-006 - Reject missing and invalid user fields', () => {
-    usersApi.create({ nome: '', email: 'invalid-email', password: '', administrador: 'invalid' })
+    usersApi.attemptCreate({ nome: '', email: 'invalid-email', password: '', administrador: 'invalid' })
       .then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body).to.include.all.keys('nome', 'email', 'password', 'administrador')
@@ -97,7 +97,7 @@ describe('ServeRest API - Users', () => {
   })
 
   it('CT-API-USR-007 - Return not found for an unknown user id', () => {
-    usersApi.getById('ZZZZZZZZZZZZZZZZ').then((response) => {
+    usersApi.attemptGetById('ZZZZZZZZZZZZZZZZ').then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body).to.deep.eq({ message: 'Usuário não encontrado' })
     })
@@ -110,7 +110,7 @@ describe('ServeRest API - Users', () => {
     usersApi.create(firstUser).then(({ body }) => idsToDelete.add(body._id))
     usersApi.create(secondUser).then(({ body }) => {
       idsToDelete.add(body._id)
-      usersApi.update(body._id, { ...secondUser, email: firstUser.email }).then((response) => {
+      usersApi.attemptUpdate(body._id, { ...secondUser, email: firstUser.email }).then((response) => {
         expect(response.status).to.eq(400)
         expect(response.body.message).to.eq(MESSAGES.EMAIL_ALREADY_USED)
       })
@@ -129,14 +129,14 @@ describe('ServeRest API - Users', () => {
   })
 
   it('CT-API-USR-010 - Reject an invalid administrator filter', () => {
-    usersApi.list({ administrador: 'invalid' }).then((response) => {
+    usersApi.attemptList({ administrador: 'invalid' }).then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.administrador).to.be.a('string').and.not.be.empty
     })
   })
 
   it('CT-API-USR-011 - Reject a malformed user id', () => {
-    usersApi.getById('invalid-id').then((response) => {
+    usersApi.attemptGetById('invalid-id').then((response) => {
       expect(response.status).to.eq(400)
       expect(response.body.id).to.include('16 caracteres alfanuméricos')
     })
